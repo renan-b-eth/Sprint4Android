@@ -3,8 +3,10 @@
 import { StyleSheet, Text, View, TextInput, Button, Image } from "react-native";
 import React, { useState } from 'react';
 
+
 // Definiindo o componente funional home como padrão de exportação
 export default function Delivered() {
+  
   return (
     <View style={styles.container}>
       <Image

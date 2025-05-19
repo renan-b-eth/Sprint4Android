@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import { Link } from 'expo-router';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
+import { autenticacaoService } from './api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Definindo os tipos para a navegação
 type RootStackParamList = {
@@ -27,6 +29,15 @@ export default function Preparing({ navigation }: { navigation: NavigationProp }
     if (email === CREDENCIAIS_VALIDAS.email && senha === CREDENCIAIS_VALIDAS.senha) {
       navigation.navigate('Delivered'); 
     } else {
+      setErro('Email ou senha incorretos');
+    }
+  };
+  const handleLogin = async () => {
+    try {
+      const response = await autenticacaoService.login(email, senha);
+      await AsyncStorage.setItem('token', response.token);
+      //navigation.navigate('Menu');
+    } catch (error) {
       setErro('Email ou senha incorretos');
     }
   };
