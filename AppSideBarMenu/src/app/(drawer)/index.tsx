@@ -1,6 +1,7 @@
 //Importanteo os componentes necessários da biblioteca do react native 
 
 import { StyleSheet, Text, View, Image } from "react-native";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Definiindo o componente funional home como padrão de exportação
 export default function Home() {
@@ -18,6 +19,36 @@ export default function Home() {
     </View>
   );
 }
+
+// Funções utilitárias para AsyncStorage
+const storeData = async (key: string, value: string) => {
+  try {
+      await AsyncStorage.setItem(key, value);
+  } catch (error) {
+      console.error("Erro ao salvar no AsyncStorage:", error);
+  }
+};
+
+const getData = async (key: string) => {
+  try {
+      const value = await AsyncStorage.getItem(key);
+      if (value !== null) {
+          return value;
+      }
+  } catch (error) {
+      console.error("Erro ao buscar no AsyncStorage:", error);
+  }
+};
+
+const removeData = async (key: string) => {
+  try {
+      await AsyncStorage.removeItem(key);
+  } catch (error) {
+      console.error("Erro ao remover do AsyncStorage:", error);
+  }
+};
+
+
 
 //Definindo os estilos para os elementos da tela
 const styles = StyleSheet.create({
