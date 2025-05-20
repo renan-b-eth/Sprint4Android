@@ -196,7 +196,7 @@ export default function Delivered() {
             <View style={styles.container}>
                 <TouchableOpacity
                     style={styles.botaoDeslogar}
-                    onPress={() => router.navigate('cadastro')}
+                    onPress={() => router.navigate('/cadastro')}
                 >
                     <Text style={styles.textoBotao}>Cadastrar Clinica</Text>
                 </TouchableOpacity>
@@ -212,7 +212,7 @@ export default function Delivered() {
             <View style={styles.container}>
                 <TouchableOpacity
                     style={styles.botao2}
-                    onPress={() => router.navigate('about')}
+                    onPress={() => router.navigate('/about')}
                 >
                     <Text style={styles.textoBotao}>Ver Dentistas</Text>
                 </TouchableOpacity>

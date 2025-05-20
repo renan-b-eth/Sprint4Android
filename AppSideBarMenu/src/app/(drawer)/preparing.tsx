@@ -78,8 +78,13 @@ export default function Preparing() {
       <Link href="/cadastro" style={styles.botaoContainer}>
         <Text style={{ color: '#fff' }}>Cadastro</Text>
       </Link>
-      <Text style={styles.title}>Recuperar Senha</Text>
-      {erro && <Text style={styles.erro}>{erro}</Text>}
+      <TouchableOpacity
+    style={styles.container}
+    onPress={() => router.navigate('/sent')}
+>
+    <Text style={styles.title2}>Recuperar Senha</Text>
+    {erro && <Text style={styles.erro}>{erro}</Text>}
+</TouchableOpacity>
     </View>
   );
 }
@@ -96,6 +101,13 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: 'bold',
     color: "#000",
+    marginTop: 20
+  },
+  title2: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: "red",
+    paddingVertical: 2,
     marginTop: 20
   },
   input: {
