@@ -71,7 +71,7 @@ export default function Preparing() {
       />
       <TouchableOpacity
         style={styles.botaoContainer}
-        onPress={verificarLogin}
+        onPress={handleLogin}
       >
         <Text style={{ color: '#fff' }}>Logar</Text>
       </TouchableOpacity>

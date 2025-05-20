@@ -10,7 +10,7 @@ export default function Home() {
   useEffect(() => {
     const timer = setTimeout(() => {
       router.push('/preparing');
-    }, 5000);
+    }, 3500);
 
     // Limpa o timer quando o componente é desmontado
     return () => clearTimeout(timer);
