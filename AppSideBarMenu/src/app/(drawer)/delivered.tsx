@@ -123,6 +123,14 @@ export default function Delivered() {
             ]
         );
     };
+    const recarregarClinicas = async () => {
+      try {
+          await carregarClinicas();
+      } catch (erro) {
+          console.error('Erro ao recarregar clínicas:', erro);
+          Alert.alert('Erro', 'Não foi possível recarregar as clínicas');
+      }
+  };
 
     useEffect(() => {
         carregarClinicas();
@@ -193,6 +201,14 @@ export default function Delivered() {
                     <Text style={styles.textoBotao}>Cadastrar Clinica</Text>
                 </TouchableOpacity>
             </View>
+            <View style={styles.container}>
+    <TouchableOpacity
+        style={[styles.botaoDeslogar, styles.botaoRecarregar]}
+        onPress={recarregarClinicas}
+    >
+        <Text style={styles.textoBotao}>Recarregar Clínicas</Text>
+    </TouchableOpacity>
+</View>
             <View style={styles.container}>
                 <TouchableOpacity
                     style={styles.botao2}
@@ -274,6 +290,10 @@ const styles = StyleSheet.create({
         marginBottom: 10,
         borderRadius: 4,
     },
+    botaoRecarregar: {
+      backgroundColor: '#4CAF50',
+      marginBottom: 10,
+  },
     botaoAlterar: {
         backgroundColor: '#007AFF',
         paddingHorizontal: 20,
