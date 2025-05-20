@@ -1,21 +1,12 @@
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Image } from "react-native";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'expo-router';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RouteProp } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import { autenticacaoService } from './api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Definindo os tipos para a navegação
-type RootStackParamList = {
-  Login: undefined;
-  TelaPrincipal: undefined;
-  Delivered: undefined; 
-};
-
-type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Login'>;
-
-export default function Preparing({ navigation }: { navigation: NavigationProp }) {
+export default function Preparing() {
+  const router = useRouter();
   const CREDENCIAIS_VALIDAS = {
     email: 'adm@adm.com',
     senha: 'adm'
@@ -27,16 +18,27 @@ export default function Preparing({ navigation }: { navigation: NavigationProp }
 
   const verificarLogin = () => {
     if (email === CREDENCIAIS_VALIDAS.email && senha === CREDENCIAIS_VALIDAS.senha) {
-      navigation.navigate('Delivered'); 
+      router.push('/delivered');
     } else {
       setErro('Email ou senha incorretos');
     }
   };
+
+  useEffect(() => {
+    const verificarTokenExistente = async () => {
+      const tokenSalvo = await AsyncStorage.getItem('token');
+      if (tokenSalvo) {
+        router.push('/delivered');
+      }
+    };
+    verificarTokenExistente();
+  }, []);
+
   const handleLogin = async () => {
     try {
       const response = await autenticacaoService.login(email, senha);
       await AsyncStorage.setItem('token', response.token);
-      //navigation.navigate('Menu');
+      router.push('/delivered');
     } catch (error) {
       setErro('Email ou senha incorretos');
     }
@@ -67,7 +69,7 @@ export default function Preparing({ navigation }: { navigation: NavigationProp }
         onChangeText={setSenha}
         secureTextEntry={true}
       />
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.botaoContainer}
         onPress={verificarLogin}
       >

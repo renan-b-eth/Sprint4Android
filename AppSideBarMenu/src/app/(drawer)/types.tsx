@@ -14,3 +14,8 @@ export type LoginScreenNavigationProp = NativeStackNavigationProp<
 export type LoginScreenProps = {
   navigation: LoginScreenNavigationProp;
 };
+export interface ErroAutenticacao {
+  codigo: number;
+  mensagem: string;
+  detalhes?: string;
+}
