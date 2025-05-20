@@ -1,7 +1,7 @@
-import { StyleSheet, Text, View, Image, FlatList, Alert } from "react-native";
+import { StyleSheet, Text, View, Image, FlatList, Alert, TouchableOpacity, TextInput } from "react-native";
 import React, { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
 
 interface Clinica {
   id: string;
@@ -13,36 +13,69 @@ interface Clinica {
 
 export default function Delivered() {
   const [clinicas, setClinicas] = useState<Clinica[]>([]);
+  const [clinicaSelecionada, setClinicaSelecionada] = useState<Clinica | null>(null);
+  const [novoResponsavel, setNovoResponsavel] = useState('');
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState('');
+  const router = useRouter();
 
-  // Função para carregar as clínicas
+  // Função para carregar as clínicas com debug melhorado
   const carregarClinicas = async () => {
+    setCarregando(true);
+    setErro('');
     try {
       const clinicasJson = await AsyncStorage.getItem('clinicas');
       if (clinicasJson) {
         const clinicasParseadas = JSON.parse(clinicasJson);
         setClinicas(clinicasParseadas);
+        if (clinicasParseadas.length > 0) {
+          setClinicaSelecionada(clinicasParseadas[0]);
+        }
+      } else {
+        setErro('Nenhuma clínica encontrada');
       }
     } catch (erro) {
       console.error('Erro ao carregar clínicas:', erro);
+      setErro('Erro ao carregar as clínicas. Verifique o armazenamento.');
+    } finally {
+      setCarregando(false);
     }
   };
 
-  // Função para excluir uma clínica
-  const excluirClinica = async (id: string) => {
+  // Função para deslogar
+  const deslogar = async () => {
+    try {
+      await AsyncStorage.removeItem('token');
+      router.back();
+    } catch (erro) {
+      console.error('Erro ao deslogar:', erro);
+      Alert.alert('Erro', 'Não foi possível deslogar');
+    }
+  };
+
+  // Função para alterar o responsável
+  const alterarResponsavel = async () => {
+    if (!clinicaSelecionada || !novoResponsavel.trim()) {
+      Alert.alert('Erro', 'Por favor, selecione uma clínica e digite um nome válido');
+      return;
+    }
+
     try {
       const clinicasJson = await AsyncStorage.getItem('clinicas');
       if (clinicasJson) {
         const clinicasArray = JSON.parse(clinicasJson);
-        const clinicasFiltradas = clinicasArray.filter(
-          (clinica: Clinica) => clinica.id !== id
-        );
-        
-        await AsyncStorage.setItem('clinicas', JSON.stringify(clinicasFiltradas));
-        setClinicas(clinicasFiltradas);
+        const index = clinicasArray.findIndex((c: { id: string; }) => c.id === clinicaSelecionada.id);
+        if (index !== -1) {
+          clinicasArray[index].responsavel = novoResponsavel;
+          await AsyncStorage.setItem('clinicas', JSON.stringify(clinicasArray));
+          setClinicas(clinicasArray);
+          setClinicaSelecionada(clinicasArray[index]);
+          setNovoResponsavel('');
+        }
       }
     } catch (erro) {
-      console.error('Erro ao excluir clínica:', erro);
-      Alert.alert('Erro', 'Não foi possível excluir a clínica');
+      console.error('Erro ao alterar responsável:', erro);
+      Alert.alert('Erro', 'Não foi possível alterar o responsável');
     }
   };
 
@@ -51,7 +84,13 @@ export default function Delivered() {
   }, []);
 
   const renderItem = ({ item }: { item: Clinica }) => (
-    <View style={styles.clinicaContainer}>
+    <TouchableOpacity
+      style={[
+        styles.clinicaContainer,
+        clinicaSelecionada?.id === item.id && styles.clinicaSelecionada
+      ]}
+      onPress={() => setClinicaSelecionada(item)}
+    >
       <Image
         source={require('./clinicasCredenciadas.png')}
         style={styles.clinicaLogo}
@@ -61,13 +100,7 @@ export default function Delivered() {
         <Text style={styles.detalhe}>Responsável: {item.responsavel}</Text>
         <Text style={styles.detalhe}>Email: {item.email}</Text>
       </View>
-      <TouchableOpacity
-        style={styles.botaoExcluir}
-        onPress={() => excluirClinica(item.id)}
-      >
-        <Text style={styles.textoExcluir}>Excluir</Text>
-      </TouchableOpacity>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
@@ -77,12 +110,47 @@ export default function Delivered() {
         style={styles.logo}
       />
       
-      <FlatList
-        data={clinicas}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        style={styles.lista}
-      />
+      <View style={styles.botoesContainer}>
+        <TouchableOpacity
+          style={styles.botaoDeslogar}
+          onPress={deslogar}
+        >
+          <Text style={styles.textoBotao}>Deslogar</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.alterarResponsavelContainer}>
+        <TextInput
+          style={styles.inputResponsavel}
+          placeholder="Novo nome do responsável"
+          value={novoResponsavel}
+          onChangeText={setNovoResponsavel}
+        />
+        <TouchableOpacity
+          style={styles.botaoAlterar}
+          onPress={alterarResponsavel}
+        >
+          <Text style={styles.textoBotao}>Alterar Responsável</Text>
+        </TouchableOpacity>
+      </View>
+
+      {carregando ? (
+        <View style={styles.carregandoContainer}>
+          <Text>Carregando clínicas...</Text>
+        </View>
+      ) : erro ? (
+        <View style={styles.erroContainer}>
+          <Text>{erro}</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={clinicas}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          style={styles.lista}
+          extraData={clinicaSelecionada}
+        />
+      )}
 
       <Image
         source={require('./menu.png')}
@@ -107,6 +175,44 @@ const styles = StyleSheet.create({
     top: -225,
     left: -130
   },
+  botoesContainer: {
+    width: '100%',
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  botaoDeslogar: {
+    backgroundColor: '#ff4444',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  textoBotao: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  alterarResponsavelContainer: {
+    width: '100%',
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  inputResponsavel: {
+    width: '100%',
+    height: 40,
+    borderColor: '#ccc',
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    marginBottom: 10,
+    borderRadius: 4,
+  },
+  botaoAlterar: {
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
   lista: {
     width: '100%',
     paddingHorizontal: 20,
@@ -117,7 +223,13 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 350,
     alignItems: 'center',
-    justifyContent: 'space-between'
+    justifyContent: 'space-between',
+    backgroundColor: '#f5f5f5',
+    padding: 10,
+    borderRadius: 8,
+  },
+  clinicaSelecionada: {
+    backgroundColor: '#e3f2fd',
   },
   clinicaLogo: {
     width: 80,
@@ -138,15 +250,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#666",
   },
-  botaoExcluir: {
-    backgroundColor: '#ff4444',
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 8,
+  carregandoContainer: {
+    padding: 20,
+    alignItems: 'center',
   },
-  textoExcluir: {
-    color: '#fff',
-    fontWeight: 'bold',
+  erroContainer: {
+    padding: 20,
+    alignItems: 'center',
+    backgroundColor: '#ffebee',
+    borderRadius: 8,
   },
   menu: {
     width: 200,
