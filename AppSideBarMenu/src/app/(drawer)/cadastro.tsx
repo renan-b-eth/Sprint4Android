@@ -1,7 +1,7 @@
 // Cadastro.tsx
 import React, { useState, useCallback, useEffect } from 'react';
 import { StyleSheet, Text, View, TextInput, Image, ActivityIndicator, Alert } from 'react-native';
-import { Link, useRouter } from 'expo-router';
+import { Link, router, useRouter } from 'expo-router';
 import { TouchableOpacity } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
@@ -19,10 +19,8 @@ export interface CadastroDados {
 const TIMEOUT_REQUEST = 10000; // 10 segundos
 const TOKEN_EXPIRATION = 30 * 60 * 1000; // 30 minutos
 
+// Cadastro.tsx
 export default function Cadastro() {
-  const router = useRouter();
-  
-  // Estados
   const [dados, setDados] = useState<CadastroDados>({
     nome: '',
     email: '',
@@ -32,7 +30,6 @@ export default function Cadastro() {
   const [erro, setErro] = useState<string>('');
   const [carregando, setCarregando] = useState(false);
 
-  // Funções auxiliares
   const validarDados = (dados: CadastroDados): boolean => {
     if (!dados.nome || !dados.email || !dados.senha || !dados.responsavel) {
       setErro('Por favor, preencha todos os campos');
@@ -41,15 +38,6 @@ export default function Cadastro() {
     return true;
   };
 
-  const configurarRequisicao = (): Record<string, any> => ({
-    timeout: TIMEOUT_REQUEST,
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      ...(Platform.OS === 'android' && { 'Connection': 'close' })
-    }
-  });
-
   const handleCadastro = useCallback(async () => {
     if (!validarDados(dados)) return;
 
@@ -57,46 +45,47 @@ export default function Cadastro() {
     setErro('');
 
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
-        controller.abort();
-      }, TIMEOUT_REQUEST);
-
-      const config = configurarRequisicao();
+      const id = Date.now().toString();
       
-      const response = await autenticacaoService.cadastrar(
-        dados.nome,
-        dados.email,
-        dados.senha,
-        dados.responsavel
-      );
+      const clinica = {
+        id,
+        nome: dados.nome,
+        email: dados.email,
+        senha: dados.senha,
+        responsavel: dados.responsavel
+      };
 
-      // Armazenamento dos dados
-      await AsyncStorage.setItem('clinicas', JSON.stringify([response]));
+      // Primeiro, vamos verificar se já existe alguma clínica
+      const clinicasJson = await AsyncStorage.getItem('clinicas');
+      let clinicas = clinicasJson ? JSON.parse(clinicasJson) : [];
 
-      // Login automático
-      const loginResponse = await autenticacaoService.login(
-        dados.email,
-        dados.senha,
-      );
+      // Verificar se o email já está cadastrado
+      const emailExiste = clinicas.some((c: { email: string; }) => c.email === clinica.email);
+      if (emailExiste) {
+        throw {
+          codigo: 400,
+          mensagem: 'Email já cadastrado',
+          detalhes: 'Este email já está sendo usado por outra clínica'
+        };
+      }
 
-      // Armazenamento do token
-      await AsyncStorage.setItem('token', loginResponse.token);
+      // Adicionar nova clínica à lista
+      clinicas.push(clinica);
 
-      clearTimeout(timeoutId);
+      // Salvar no AsyncStorage
+      await AsyncStorage.setItem('clinicas', JSON.stringify(clinicas));
+
+      // Gerar token
+      const token = `token-${id}`;
+      await AsyncStorage.setItem('token', token);
+
       router.back();
     } catch (error) {
       console.error('[DEBUG] Erro detalhado:', error);
       if (error instanceof Error) {
-        if (error.message.includes('Network Error')) {
-          setErro('Erro de conexão com o servidor. Verifique sua internet e tente novamente.');
-        } else if (error.message.includes('timeout')) {
-          setErro('Tempo limite excedido. Por favor, tente novamente.');
-        } else {
-          setErro(error.message);
-        }
+        setErro('Erro no cadastro');
       } else {
-        setErro('Ocorreu um erro durante o cadastro. Verifique os logs para mais detalhes.');
+        setErro('Erro no cadastro. Verifique os logs para mais detalhes.');
       }
     } finally {
       setCarregando(false);
@@ -105,7 +94,7 @@ export default function Cadastro() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Cadastro de ClínicAAAAa</Text>
+      <Text style={styles.title}>Cadastro de Clínica</Text>
       <Image
         source={require('./logo.png')}
         style={styles.logo}
