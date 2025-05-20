@@ -1,11 +1,32 @@
-//Importanteo os componentes necessários da biblioteca do react native 
-
-import { StyleSheet, Text, View, TextInput, Button, Image } from "react-native";
+import { StyleSheet, Text, View, TextInput, Button, Image, Alert } from "react-native";
 import React, { useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Definiindo o componente funional home como padrão de exportação
 export default function Sent() {
   const [email, setEmail] = useState('');
+  const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [senha, setSenha] = useState('');
+
+  // Função para buscar a senha do usuário
+  const buscarSenha = async () => {
+    try {
+      const clinicasJson = await AsyncStorage.getItem('clinicas');
+      if (clinicasJson) {
+        const clinicas = JSON.parse(clinicasJson);
+        const clinica = clinicas.find((c: { email: string; }) => c.email === email);
+        
+        if (clinica) {
+          setSenha(clinica.senha);
+          setMostrarSenha(true);
+        } else {
+          Alert.alert('Erro', 'E-mail não encontrado');
+        }
+      }
+    } catch (erro) {
+      console.error('Erro ao buscar senha:', erro);
+      Alert.alert('Erro', 'Não foi possível recuperar a senha');
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -16,7 +37,7 @@ export default function Sent() {
           height: 200,
           resizeMode: 'contain'
         }}
-      />  
+      />
       <TextInput
         style={styles.input}
         placeholder="Email"
@@ -26,36 +47,56 @@ export default function Sent() {
         autoCapitalize="none"
       />
       <Text style={styles.texto}>Insira seu e-mail para receber as instruções</Text>
-      <Button 
-      title="Recuperar Senha"
-      onPress={() => alert('RECUPERAÇÃO DE SENHA PROXIMA FEATURE')}
-        />
+      <Button
+        title="Recuperar Senha"
+        onPress={buscarSenha}
+      />
+      {mostrarSenha && (
+        <View style={styles.senhaContainer}>
+          <Text style={styles.senhaTexto}>Sua senha: {senha}</Text>
+          <Button
+            title="Esconder Senha"
+            onPress={() => setMostrarSenha(false)}
+            color="#ff4444"
+          />
+        </View>
+      )}
     </View>
   );
 }
 
-//Definindo os estilos para os elementos da tela
 const styles = StyleSheet.create({
   container: {
-    flex: 1, // ocupa toda a tela disponível
-    backgroundColor: "#fff", // define o fundo da tela como branco
-    alignItems: "center", //alinha os itens no centro da tela
-    justifyContent: "center",  // alinha os itens no centro  verticalmente
-    },
-    title: {
-      fontSize: 20,
-      fontWeight: 'bold',
-        color: "#000",
-    },
-    input: {
-      width: '80%',
-      height: 40,
-      borderBottomColor: '#000',    // Cor do traço
-      borderBottomWidth: 1,         // Espessura do traço
-      paddingHorizontal: 10        // Espaçamento interno
-    },
-    texto: {
-      fontSize: 15,
-      color: "#000",
-    }
-})
+    flex: 1,
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: "#000",
+  },
+  input: {
+    width: '80%',
+    height: 40,
+    borderBottomColor: '#000',
+    borderBottomWidth: 1,
+    paddingHorizontal: 10,
+    marginBottom: 20,
+  },
+  texto: {
+    fontSize: 15,
+    color: "#000",
+    marginBottom: 20,
+  },
+  senhaContainer: {
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  senhaTexto: {
+    fontSize: 16,
+    color: '#000',
+    marginBottom: 10,
+  }
+});
