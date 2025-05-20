@@ -78,7 +78,7 @@ export default function Cadastro() {
       // Gerar token
       const token = `token-${id}`;
       await AsyncStorage.setItem('token', token);
-
+      
       router.back();
     } catch (error) {
       console.error('[DEBUG] Erro detalhado:', error);
